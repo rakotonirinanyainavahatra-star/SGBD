@@ -45,6 +45,7 @@ public class Relation {
                 Domaine domaineTemporaire = attributs[j].getDomaine();
 
                 if(val.getClass() != domaineTemporaire.getClasse() || val == null) {
+                    System.out.println("La valeur " + val + " n'est pas du type attendu pour l'attribut " + attributs[j].getNom());
                     return false;
                 }
                 else if (val instanceof Number) {
@@ -53,6 +54,7 @@ public class Relation {
                     double max = ((Number) domaineTemporaire.getMax()).doubleValue();
 
                     if (v < min || v > max) {
+                        System.out.println("La valeur " + v + " n'est pas dans l'intervalle [" + min + ", " + max + "]");
                         return false;
                     }
                 }
@@ -62,6 +64,7 @@ public class Relation {
                     int maxTaille = ((Number) domaineTemporaire.getMax()).intValue();
 
                     if (longueur < minTaille || longueur > maxTaille) {
+                        System.out.println("La valeur " + val + " n'est pas dans l'intervalle [" + minTaille + ", " + maxTaille + "]");
                         return false;
                     }
                 }
@@ -72,12 +75,12 @@ public class Relation {
 
     public void afficherFormeTableau() {
 
-        Attribut[] attributs = this.attributs;
-        Object[][] valeurs = this.valeurs;
+        Attribut[] attributs = this.getAttributs();
+        Object[][] valeurs = this.getValeurs();
 
         StringBuilder bordure = new StringBuilder("+");
         StringBuilder entete = new StringBuilder("|");
-        StringBuilder ligneTexte = new StringBuilder("|");
+        StringBuilder ligneTexte = new StringBuilder();
 
         for(Attribut attr: attributs) {
             bordure.append("-----------------+");
@@ -85,18 +88,41 @@ public class Relation {
         }
 
         for(Object[] ligne: valeurs) {
-
+            ligneTexte.append("|");
             for(Object val: ligne) {
                 ligneTexte.append(String.format(" %-15s |", val));
             }
+            ligneTexte.append("\n");
         }
 
         System.out.println(bordure.toString());
         System.out.println(entete.toString());
         System.out.println(bordure.toString());
-        System.out.println(ligneTexte.toString());
+        System.out.print(ligneTexte.toString());
         System.out.println(bordure.toString());
 
     }
+
+    public static Relation getRelationByName(Relation relation, String projection) {
+
+        Attribut[] attributs = relation.getAttributs();
+        Object[][] valeurs = relation.getValeurs();
+
+        for (int i = 0; i < attributs.length; i++) {
+            if (attributs[i].getNom().equals(projection.trim())) {
+                int index = i;
+                Attribut[] attributsProjection = {attributs[index]};
+
+                Object[][] valeursProjection = new Object[valeurs.length][1];
+                for (int j = 0; j < valeurs.length; j++) {
+                    valeursProjection[j][0] = valeurs[j][index];
+                }
+                return new Relation(relation.getNom(), attributsProjection, valeursProjection);
+            }
+        }
+
+        return new Relation(relation.getNom(), new Attribut[0], new Object[0][0]);
+    }
+    
 
 }

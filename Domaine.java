@@ -89,7 +89,7 @@ public class Domaine {
 
             double max = Math.pow(10, precision - echelle) - Math.pow(10, -echelle);
             double min = -max;
-            return new Domaine(nomDomaine, min, max, java.math.BigDecimal.class);
+            return new Domaine(nomDomaine, min, max, Double.class);
         }
         else if(nomDomaine.toUpperCase().trim().startsWith("DATE")) {
             LocalDate minDate = LocalDate.of(1, 1, 1);
