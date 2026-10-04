@@ -103,26 +103,72 @@ public class Relation {
 
     }
 
-    public static Relation getRelationByName(Relation relation, String projection) {
+    public static String[] extraireProjection(String projection) {
+        return projection.trim().split(",");
+    }
+
+    public static Object[][] gestionDoublons(Object[][] valeurs) {
+
+        for (int i = 0; i < valeurs.length; i++) {
+
+            for (int j = i + 1; j < valeurs.length; j++) {
+
+                boolean doublon = true;
+                Object[] ligne = valeurs[i];
+
+                for (int k = 0; k < ligne.length; k++) {
+
+                    if (!valeurs[i][k].equals(valeurs[j][k])) {
+                        doublon = false;
+                        break;
+                    }
+
+                }
+                if (doublon) {
+
+                    Object[][] nouvellesValeurs = new Object[valeurs.length - 1][valeurs[i].length];
+                    int index = 0;
+
+                    for (int l = 0; l < valeurs.length; l++) {
+
+                        if (l != j) {
+                            nouvellesValeurs[index++] = valeurs[l];
+                        }
+
+                    }
+                    return gestionDoublons(nouvellesValeurs);
+                }
+            }
+        }
+        return valeurs;
+    }
+
+    public static Relation projection(Relation relation, String projection) {
 
         Attribut[] attributs = relation.getAttributs();
         Object[][] valeurs = relation.getValeurs();
 
-        for (int i = 0; i < attributs.length; i++) {
-            if (attributs[i].getNom().equals(projection.trim())) {
-                int index = i;
-                Attribut[] attributsProjection = {attributs[index]};
+        String[] tableauProjection = Relation.extraireProjection(projection);
 
-                Object[][] valeursProjection = new Object[valeurs.length][1];
-                for (int j = 0; j < valeurs.length; j++) {
-                    valeursProjection[j][0] = valeurs[j][index];
+        Attribut[] attributsProjection = new Attribut[tableauProjection.length];
+        Object[][] valeursProjection = new Object[valeurs.length][tableauProjection.length];
+
+        for (int k = 0; k < tableauProjection.length; k++) {
+
+            String nomColonne = tableauProjection[k];
+            for (int i = 0; i < attributs.length; i++) {
+
+                if (attributs[i].getNom().equals(nomColonne.trim())) {
+                    attributsProjection[k] = attributs[i];
+
+                    for (int j = 0; j < valeurs.length; j++) {
+                        valeursProjection[j][k] = valeurs[j][i];
+                    }
+                    break;
                 }
-                return new Relation(relation.getNom(), attributsProjection, valeursProjection);
             }
         }
-
-        return new Relation(relation.getNom(), new Attribut[0], new Object[0][0]);
+        Object[][] valeursSansDoublons = Relation.gestionDoublons(valeursProjection);
+        return new Relation(relation.getNom(), attributsProjection, valeursSansDoublons);
     }
-    
-
 }
