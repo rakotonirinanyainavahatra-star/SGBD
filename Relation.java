@@ -1,8 +1,14 @@
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
+
 public class Relation {
 
     private String nom;
     private Attribut[] attributs;
     private Object[][] valeurs;
+    private static final String[] OPERATEURS = {">=", "<=", "!=", ">", "<", "="};
 
     public Relation (String nom, Attribut[] attributs, Object[][] valeurs) {
         this.nom = nom;
@@ -34,6 +40,27 @@ public class Relation {
         this.valeurs = valeurs;
     }
 
+    private static String trouverOperateur(String condition) {
+        for (String op : OPERATEURS) {
+            if (condition.contains(op)) {
+                return op;
+            }
+        }
+        return null;
+    }
+
+    private static boolean comparer(int cmp, String operateur) {
+        switch (operateur) {
+            case ">":  return cmp > 0;
+            case "<":  return cmp < 0;
+            case ">=": return cmp >= 0;
+            case "<=": return cmp <= 0;
+            case "=":  return cmp == 0;
+            case "!=": return cmp != 0;
+            default:   return false;
+        }
+    }
+
     public static boolean checkValeurs(Attribut[] attributs, Object[][] valeurs) {
 
         for(int i = 0; i < valeurs.length; i++) {
@@ -43,6 +70,10 @@ public class Relation {
 
                 Object val = ligne[j];
                 Domaine domaineTemporaire = attributs[j].getDomaine();
+
+                if (val == null) {
+                    continue;
+                }
 
                 if(val.getClass() != domaineTemporaire.getClasse() || val == null) {
                     System.out.println("La valeur " + val + " n'est pas du type attendu pour l'attribut " + attributs[j].getNom());
@@ -90,6 +121,10 @@ public class Relation {
         for(Object[] ligne: valeurs) {
             ligneTexte.append("|");
             for(Object val: ligne) {
+                
+                if (val == null){
+                    val = "NULL";
+                }
                 ligneTexte.append(String.format(" %-15s |", val));
             }
             ligneTexte.append("\n");
@@ -103,12 +138,13 @@ public class Relation {
 
     }
 
-    public static String[] extraireProjection(String projection) {
-        return projection.trim().split(",");
+    public static String[] extraireProjection(String projection, String separateur) {
+        return projection.trim().split(separateur);
     }
 
-    public static Object[][] gestionDoublons(Object[][] valeurs) {
+    public Relation gestionDoublons() {
 
+        Object[][] valeurs = this.getValeurs();
         for (int i = 0; i < valeurs.length; i++) {
 
             for (int j = i + 1; j < valeurs.length; j++) {
@@ -132,23 +168,25 @@ public class Relation {
                     for (int l = 0; l < valeurs.length; l++) {
 
                         if (l != j) {
-                            nouvellesValeurs[index++] = valeurs[l];
+                            nouvellesValeurs[index] = valeurs[l];
+                            index++;
                         }
 
                     }
-                    return gestionDoublons(nouvellesValeurs);
+                    Relation result = new Relation(this.getNom(), this.getAttributs(), nouvellesValeurs);
+                    return result.gestionDoublons();
                 }
             }
         }
-        return valeurs;
+        return this;
     }
 
-    public static Relation projection(Relation relation, String projection) {
+    public Relation projection(String projection) {
 
-        Attribut[] attributs = relation.getAttributs();
-        Object[][] valeurs = relation.getValeurs();
+        Attribut[] attributs = this.getAttributs();
+        Object[][] valeurs = this.getValeurs();
 
-        String[] tableauProjection = Relation.extraireProjection(projection);
+        String[] tableauProjection = Relation.extraireProjection(projection, ",");
 
         Attribut[] attributsProjection = new Attribut[tableauProjection.length];
         Object[][] valeursProjection = new Object[valeurs.length][tableauProjection.length];
@@ -168,7 +206,76 @@ public class Relation {
                 }
             }
         }
-        Object[][] valeursSansDoublons = Relation.gestionDoublons(valeursProjection);
-        return new Relation(relation.getNom(), attributsProjection, valeursSansDoublons);
+        Relation projectionRelation = new Relation(this.getNom(), attributsProjection, valeursProjection);
+        Relation valeursSansDoublons = projectionRelation.gestionDoublons();
+        return valeursSansDoublons;
+    }
+
+    public Relation selection(String condition) {
+
+        String operateur = trouverOperateur(condition);
+        if (operateur == null) {
+            System.out.println("Opérateur non trouvé dans la condition : " + condition);
+            return null;
+        }
+
+        int positionOperateur = condition.indexOf(operateur);
+        String nomAttribut = condition.substring(0, positionOperateur).trim();
+        String valeurConditionStr = condition.substring(positionOperateur + operateur.length()).trim();
+
+        Attribut[] attributs = this.getAttributs();
+        Object[][] valeurs = this.getValeurs();
+
+        int index = -1;
+        Comparable valeurCondition = null;
+
+        for (int i = 0; i < attributs.length; i++) {
+
+            if (attributs[i].getNom().equals(nomAttribut)) {
+                
+                String texte = valeurConditionStr;
+                Class<?> classeAttribut = attributs[i].getDomaine().getClasse();
+
+                if (classeAttribut == Integer.class) {
+                    valeurCondition = Integer.parseInt(texte);
+                } else if (classeAttribut == Float.class) {
+                    valeurCondition = Float.parseFloat(texte);
+                } else if (classeAttribut == Double.class) {
+                    valeurCondition = Double.parseDouble(texte);
+                } else if (classeAttribut == String.class) {
+                    valeurCondition = texte;
+                } else if (classeAttribut == LocalDate.class) {
+                    valeurCondition = LocalDate.parse(texte);
+                } else {
+                    System.out.println("Type de données non pris en charge pour la sélection.");
+                    return null;
+                }
+                index = i;
+                break;
+            }
+        }
+
+        if (index == -1) {
+            System.out.println("Attribut introuvable : " + nomAttribut);
+            return null;
+        }
+
+        List<Object[]> lignesSelectionnees = new ArrayList<>();
+
+        for (int j = 0; j < valeurs.length; j++) {
+            Comparable valeurLigne = (Comparable) valeurs[j][index];
+
+            if (valeurLigne == null) {
+                continue;
+            }
+
+            if (comparer(valeurLigne.compareTo(valeurCondition), operateur)) {
+                lignesSelectionnees.add(valeurs[j]);
+            }
+        }
+
+        Object[][] valeursSelectionnees = lignesSelectionnees.toArray(new Object[0][]);
+
+        return new Relation(this.getNom(), this.getAttributs(), valeursSelectionnees);
     }
 }
