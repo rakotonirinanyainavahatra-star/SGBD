@@ -1,7 +1,7 @@
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
+import java.util.Objects;
 
 public class Relation {
 
@@ -304,5 +304,78 @@ public class Relation {
         }
 
         return new Relation(this.getNom() + "_x_" + autreRelation.getNom(), attributsResultat, valeursResultat);
+    }
+
+    public Relation jointure(Relation autreRelation, String jointureCondition) {
+
+        String[] conditions = Relation.extraireProjection(jointureCondition, "=");
+        if (conditions.length != 2) {
+            System.out.println("Condition de jointure invalide : " + jointureCondition);
+            return null;
+        }
+
+        String[] relEtAttribut1 = Relation.extraireProjection(conditions[0], "\\.");
+        String[] relEtAttribut2 = Relation.extraireProjection(conditions[1], "\\.");
+        if (relEtAttribut1.length != 2 || relEtAttribut2.length != 2) {
+            System.out.println("Format attendu : Relation1.attribut = Relation2.attribut");
+            return null;
+        }
+
+        String relation1 = relEtAttribut1[0].trim();
+        String attr1 = relEtAttribut1[1].trim();
+        String relation2 = relEtAttribut2[0].trim();
+        String attr2 = relEtAttribut2[1].trim();
+
+        if (!relation1.equals(this.getNom()) || !relation2.equals(autreRelation.getNom())) {
+            System.out.println("Les noms des relations dans la condition ne correspondent pas aux relations fournies.");
+            return null;
+        }
+
+        Attribut[] attributs1 = this.getAttributs();
+        Object[][] valeurs1 = this.getValeurs();
+        Attribut[] attributs2 = autreRelation.getAttributs();
+        Object[][] valeurs2 = autreRelation.getValeurs();
+
+        int index1 = -1;
+        for (int i = 0; i < attributs1.length; i++) {
+            if (attributs1[i].getNom().equals(attr1)) {
+                index1 = i;
+                break;
+            }
+        }
+
+        int index2 = -1;
+        for (int j = 0; j < attributs2.length; j++) {
+            if (attributs2[j].getNom().equals(attr2)) {
+                index2 = j;
+                break;
+            }
+        }
+
+        if (index1 == -1 || index2 == -1) {
+            System.out.println("Attribut de jointure introuvable.");
+            return null;
+        }
+
+        List<Object[]> lignesJointure = new ArrayList<>();
+
+        for (Object[] ligne1 : valeurs1) {
+            for (Object[] ligne2 : valeurs2) {
+                if (Objects.equals(ligne1[index1], ligne2[index2])) {
+                    Object[] ligneResultat = new Object[ligne1.length + ligne2.length];
+                    System.arraycopy(ligne1, 0, ligneResultat, 0, ligne1.length);
+                    System.arraycopy(ligne2, 0, ligneResultat, ligne1.length, ligne2.length);
+                    lignesJointure.add(ligneResultat);
+                }
+            }
+        }
+
+        Object[][] valeursJointure = lignesJointure.toArray(new Object[0][]);
+
+        Attribut[] attributsJointure = new Attribut[attributs1.length + attributs2.length];
+        System.arraycopy(attributs1, 0, attributsJointure, 0, attributs1.length);
+        System.arraycopy(attributs2, 0, attributsJointure, attributs1.length, attributs2.length);
+
+        return new Relation(this.getNom() + "_join_" + autreRelation.getNom(), attributsJointure, valeursJointure);
     }
 }

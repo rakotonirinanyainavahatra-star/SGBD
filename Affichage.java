@@ -18,6 +18,7 @@ public class Affichage {
 
         String projection = "Nom, Prenom";
         String selection = "Nombre >= 20";
+        String jointure = "Table.id = Table2.id";
 
         Domaine domaine1 = Domaine.getDomaineByName(nomDomaine1);
         Domaine domaine2 = Domaine.getDomaineByName(nomDomaine2);
@@ -77,17 +78,26 @@ public class Affichage {
             Relation projectionRelation = relation.projection(projection);
 
             if (projectionRelation.getAttributs().length > 0 && projectionRelation.getValeurs().length > 0) {
+                System.out.println("Projection " + projectionRelation.getNom() + ":");
                 projectionRelation.afficherFormeTableau();
             }
 
             Relation selectionRelation = relation.selection(selection);
             if (selectionRelation.getAttributs().length > 0 && selectionRelation.getValeurs().length > 0) {
+                System.out.println("Sélection " + selectionRelation.getNom() + ":");
                 selectionRelation.afficherFormeTableau();
             }
 
             Relation produitCartesienRelation = relation.produitCartesien(relation2);
             if (produitCartesienRelation.getAttributs().length > 0 && produitCartesienRelation.getValeurs().length > 0) {
+                System.out.println("Produit cartésien " + produitCartesienRelation.getNom() + ":");
                 produitCartesienRelation.afficherFormeTableau();
+            }
+
+            Relation jointureRelation = relation.jointure(relation2, jointure);
+            if (jointureRelation.getAttributs().length > 0 && jointureRelation.getValeurs().length > 0) {
+                System.out.println("Jointure " + jointureRelation.getNom() + ":");
+                jointureRelation.afficherFormeTableau();
             }
         }
 
