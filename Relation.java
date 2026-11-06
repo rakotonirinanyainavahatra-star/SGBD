@@ -278,4 +278,31 @@ public class Relation {
 
         return new Relation(this.getNom(), this.getAttributs(), valeursSelectionnees);
     }
+
+    public Relation produitCartesien(Relation autreRelation) {
+
+        Attribut[] attributs1 = this.getAttributs();
+        Object[][] valeurs1 = this.getValeurs();
+
+        Attribut[] attributs2 = autreRelation.getAttributs();
+        Object[][] valeurs2 = autreRelation.getValeurs();
+
+        Attribut[] attributsResultat = new Attribut[attributs1.length + attributs2.length];
+        System.arraycopy(attributs1, 0, attributsResultat, 0, attributs1.length);
+        System.arraycopy(attributs2, 0, attributsResultat, attributs1.length, attributs2.length);
+
+        Object[][] valeursResultat = new Object[valeurs1.length * valeurs2.length][attributsResultat.length];
+
+        int index = 0;
+        for (Object[] ligne1 : valeurs1) {
+            for (Object[] ligne2 : valeurs2) {
+                Object[] ligneResultat = new Object[attributsResultat.length];
+                System.arraycopy(ligne1, 0, ligneResultat, 0, ligne1.length);
+                System.arraycopy(ligne2, 0, ligneResultat, ligne1.length, ligne2.length);
+                valeursResultat[index++] = ligneResultat;
+            }
+        }
+
+        return new Relation(this.getNom() + "_x_" + autreRelation.getNom(), attributsResultat, valeursResultat);
+    }
 }
