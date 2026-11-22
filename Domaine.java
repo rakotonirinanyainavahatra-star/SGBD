@@ -65,7 +65,7 @@ public class Domaine {
 
     public static Domaine getDomaineByName(String nomDomaine) {
 
-        if (nomDomaine.equalsIgnoreCase("INT") || nomDomaine.equalsIgnoreCase("INTERGER")) {
+        if (nomDomaine.equalsIgnoreCase("INT") || nomDomaine.equalsIgnoreCase("INTEGER")) {
             return new Domaine(nomDomaine, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.class);
         }
         else if(nomDomaine.equalsIgnoreCase("FLOAT")){

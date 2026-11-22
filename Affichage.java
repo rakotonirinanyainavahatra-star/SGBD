@@ -99,6 +99,12 @@ public class Affichage {
                 System.out.println("Jointure " + jointureRelation.getNom() + ":");
                 jointureRelation.afficherFormeTableau();
             }
+
+            Relation unionRelation = relation.union(relation2);
+            if (unionRelation.getAttributs().length > 0 && unionRelation.getValeurs().length > 0) {
+                System.out.println("Union " + unionRelation.getNom() + ":");
+                unionRelation.afficherFormeTableau();
+            }
         }
 
     }

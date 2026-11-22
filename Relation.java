@@ -75,7 +75,7 @@ public class Relation {
                     continue;
                 }
 
-                if(val.getClass() != domaineTemporaire.getClasse() || val == null) {
+                if(val.getClass() != domaineTemporaire.getClasse()) {
                     System.out.println("La valeur " + val + " n'est pas du type attendu pour l'attribut " + attributs[j].getNom());
                     return false;
                 }
@@ -85,7 +85,7 @@ public class Relation {
                     double max = ((Number) domaineTemporaire.getMax()).doubleValue();
 
                     if (v < min || v > max) {
-                        System.out.println("La valeur " + v + " n'est pas dans l'intervalle [" + min + ", " + max + "]");
+                        System.out.println("La valeur " + val + " n'est pas dans l'intervalle [" + min + ", " + max + "]");
                         return false;
                     }
                 }
@@ -96,6 +96,17 @@ public class Relation {
 
                     if (longueur < minTaille || longueur > maxTaille) {
                         System.out.println("La valeur " + val + " n'est pas dans l'intervalle [" + minTaille + ", " + maxTaille + "]");
+                        return false;
+                    }
+                }
+                else if (val instanceof LocalDate) {
+                    LocalDate date = (LocalDate) val;
+                    LocalDate min = (LocalDate) domaineTemporaire.getMin();
+                    LocalDate max = (LocalDate) domaineTemporaire.getMax();
+
+                    if (date.isBefore(min) || date.isAfter(max)) {
+                        System.out.println("La date " + date + " n'est pas dans l'intervalle ["
+                                + min + ", " + max + "]");
                         return false;
                     }
                 }
@@ -154,7 +165,7 @@ public class Relation {
 
                 for (int k = 0; k < ligne.length; k++) {
 
-                    if (!valeurs[i][k].equals(valeurs[j][k])) {
+                    if (!Objects.equals(ligne[k], valeurs[j][k])) {
                         doublon = false;
                         break;
                     }
@@ -377,5 +388,41 @@ public class Relation {
         System.arraycopy(attributs2, 0, attributsJointure, attributs1.length, attributs2.length);
 
         return new Relation(this.getNom() + "_join_" + autreRelation.getNom(), attributsJointure, valeursJointure);
+    }
+
+    public Relation union(Relation autreRelation) {
+
+        Attribut[] attributs1 = this.getAttributs();
+        Attribut[] attributs2 = autreRelation.getAttributs();
+
+        Relation resultat = null;
+
+        if (attributs1.length != attributs2.length) {
+            return null;
+        }
+
+        for (int i = 0; i < attributs1.length; i++) {
+
+            Domaine d1 = attributs1[i].getDomaine();
+            Domaine d2 = attributs2[i].getDomaine();
+
+            if (!Objects.equals(d1.getClasse(), d2.getClasse()) &&
+                !Objects.equals(d1.getMin(), d2.getMin()) &&
+                !Objects.equals(d1.getMax(), d2.getMax())) {
+                return null;
+            }
+
+            Object valeurs1[][] = this.getValeurs();
+            Object valeurs2[][] = autreRelation.getValeurs();
+
+            Object valeursResultat[][] = new Object[valeurs1.length + valeurs2.length][attributs1.length];
+
+            System.arraycopy(valeurs1, 0, valeursResultat, 0, valeurs1.length);
+            System.arraycopy(valeurs2, 0, valeursResultat, valeurs1.length, valeurs2.length);
+
+
+            resultat = new Relation(this.getNom() + "_union_" + autreRelation.getNom(), attributs1, valeursResultat);
+        }
+        return resultat.gestionDoublons();
     }
 }
